@@ -12,8 +12,8 @@ function Default() {
     let spreadsheet;
     const fileList = [
         { name: 'Car Sales Report', extension: '.xlsx' },
-        { name: 'Shopping Cart', extension: '.xls' },
-        { name: 'Price Details', extension: '.csv' },
+        { name: 'Shopping Details', extension: '.xls' },
+        { name: 'Price Details', extension: '.csv' }
     ];
 
     const fields = { text: 'name' };
@@ -32,7 +32,6 @@ function Default() {
             body: JSON.stringify({
                 FileName: fileInfo.name,       // Name of the file to open
                 Extension: fileInfo.extension, // File extension (.xlsx)
-                FolderId: fileInfo.folderId,   // Google Drive folder ID
             }),
         })
             .then((response) => response.json()) // Parse the response as JSON
@@ -47,15 +46,16 @@ function Default() {
             });
     };
 
+    // Save the current spreadsheet to Google Drive
     const saveToGoogleDrive = () => {
+        // Convert spreadsheet data to JSON
         spreadsheet.saveAsJson().then((json) => {
             const formData = new FormData();
-            formData.append('FileId', loadedFileInfo.fileId || '');
-            formData.append('FileName', loadedFileInfo.fileName);
-            formData.append('SaveType', loadedFileInfo.saveType);
-            formData.append('FolderId', loadedFileInfo.folderId);
-            formData.append('JSONData', JSON.stringify(json.jsonObject.Workbook));
-            formData.append('PdfLayoutSettings', JSON.stringify({ FitSheetOnOnePage: false }));
+            // Append required fields for backend API
+            formData.append('FileName', loadedFileInfo.fileName);   // File name
+            formData.append('SaveType', loadedFileInfo.saveType);   // Format type (Xlsx, Xls, Csv)
+            formData.append('JSONData', JSON.stringify(json.jsonObject.Workbook)); // Spreadsheet data
+            formData.append('PdfLayoutSettings', JSON.stringify({ FitSheetOnOnePage: false })); // PDF settings
             // Make a POST request to the backend API to save the file to Google Drive.
             // Replace the URL with your local or hosted endpoint URL.
             fetch('https://localhost:your_port_number/api/spreadsheet/SaveExcelToGoogleDrive', {

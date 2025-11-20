@@ -22,7 +22,6 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Your Syncfusion license key");
-
 app.UseCors(MyAllowSpecificOrigins);
 
 // Configure the HTTP request pipeline.

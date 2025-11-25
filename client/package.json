@@ -1,0 +1,32 @@
+{
+  "name": "abfuy4zt--run",
+  "version": "*",
+  "private": true,
+  "dependencies": {
+    "react": "*",
+    "react-dom": "*",
+    "@syncfusion/ej2-react-spreadsheet": "*",
+    "@syncfusion/ej2-react-dropdowns": "*"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "devDependencies": {
+    "react-scripts": "latest"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

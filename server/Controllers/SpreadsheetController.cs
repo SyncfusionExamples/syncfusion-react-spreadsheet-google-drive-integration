@@ -64,8 +64,15 @@ namespace WebAPI.Controllers
                 string fileIdToDownload = files.Files.FirstOrDefault(f => f.Name == options.FileName + options.Extension)?.Id;
                 // Get the file ID for the requested file name
                 if (string.IsNullOrEmpty(fileIdToDownload))
+                {
                     // Get the file ID for the requested file name
-                    return NotFound("File not found in Google Drive.");
+                    var errorResponse = new ErrorResponse 
+                    { 
+                        Message = "File not found in Google Drive.",
+                        Error = "NotFound"
+                    };
+                    return NotFound(errorResponse);
+                }
                 // Download the file
                 var request = service.Files.Get(fileIdToDownload);
                 await request.DownloadAsync(stream);
@@ -84,7 +91,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest("Error occurred while processing the file: " + ex.Message);
+                var errorResponse = new ErrorResponse
+                {
+                    Message = "Error occurred while processing the file.",
+                    Error = ex.Message
+                };
+                return BadRequest(errorResponse);
             }
         }
 
@@ -95,90 +107,106 @@ namespace WebAPI.Controllers
             public string Extension { get; set; } = string.Empty;
         }
 
+        // Error response model
+        public class ErrorResponse
+        {
+            public string Message { get; set; }
+            public string Error { get; set; }
+        }
+
         [HttpPost]
         [Route("SaveExcelToGoogleDrive")]
         public async Task<IActionResult> SaveExcelToGoogleDrive([FromForm] SaveSettings saveSettings)
         {
             try
             {
-                 //Generate Excel file stream using Syncfusion
+                // Generate Excel stream from Syncfusion JSON
                 Stream generatedStream = Workbook.Save<Stream>(saveSettings);
-                //Copy to MemoryStream to ensure full content is flushed and seekable
-                MemoryStream excelStream = new MemoryStream();
-                // Copy generated stream to MemoryStream for upload
-                await generatedStream.CopyToAsync(excelStream);
-                excelStream.Position = 0; // Reset position for upload
 
-                // Prepare file name with extension based on SaveType
+                using MemoryStream excelStream = new MemoryStream();
+                await generatedStream.CopyToAsync(excelStream);
+                excelStream.Position = 0;
+
+                // Prepare file name
                 string fileName = saveSettings.FileName + "." + saveSettings.SaveType.ToString().ToLower();
 
-                // Validate service account credential file
+                // Validate credential file
                 if (!System.IO.File.Exists(credentialPath))
                     throw new FileNotFoundException($"Service account key file not found at {credentialPath}");
 
-                //Authenticate using Service Account credentials
+                // Authenticate Google Drive
                 GoogleCredential credential;
-                // Load Google service account credentials
                 using (var streamKey = new FileStream(credentialPath, FileMode.Open, FileAccess.Read))
                 {
                     credential = GoogleCredential.FromStream(streamKey)
                         .CreateScoped(DriveService.Scope.Drive);
                 }
 
-                //Initialize Google Drive API service
                 var service = new DriveService(new BaseClientService.Initializer()
-                // Initialize Google Drive API client
                 {
                     HttpClientInitializer = credential,
                     ApplicationName = applicationName,
                 });
 
-                //Prepare file metadata
-                var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+                // Determine MIME type
+                string mimeType = saveSettings.SaveType switch
                 {
-                    Name = fileName
-                };
-
-                //Check if file already exists in the specified folder
-                var listRequest = service.Files.List();
-                listRequest.Q = $"name='{fileName}' and trashed=false";
-
-                // Query Google Drive for Excel, CSV files in the specified folder
-                listRequest.Fields = "files(id)";
-                var files = await listRequest.ExecuteAsync();
-
-                // Reset stream position before upload (important for both update and create)
-                excelStream.Position = 0;
-
-                // Set MIME type dynamically based on SaveType
-                 string mimeType = saveSettings.SaveType switch
-                 {
                     SaveType.Xlsx => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     SaveType.Xls => "application/vnd.ms-excel",
                     SaveType.Csv => "text/csv",
-                 };
+                    _ => "application/octet-stream"
+                };
+
+                // Check if file exists in the specific folder
+                var listRequest = service.Files.List();
+                listRequest.Q = $"name='{fileName}' and '{folderId}' in parents and trashed=false";
+                listRequest.Fields = "files(id, name)";
+                var files = await listRequest.ExecuteAsync();
 
                 if (files.Files.Any())
                 {
-                    // If File exists Update in the existing file
-                    var updateRequest = service.Files.Update(fileMetadata, files.Files[0].Id, excelStream,
-                        mimeType);
+                    // Update existing file (DO NOT set Parents here)
+                    var fileId = files.Files[0].Id;
+
+                    excelStream.Position = 0;
+
+                    var updateRequest = service.Files.Update(
+                        new Google.Apis.Drive.v3.Data.File(),
+                        fileId,
+                        excelStream,
+                        mimeType
+                    );
+
                     updateRequest.Fields = "id";
                     await updateRequest.UploadAsync();
+
+                    return Ok("File updated successfully in Google Drive.");
                 }
                 else
                 {
-                    // If File does not exist, Create new file
-                    var createRequest = service.Files.Create(fileMetadata, excelStream,mimeType);
+                    // Create new file in folder
+                    var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+                    {
+                        Name = fileName,
+                        Parents = new List<string> { folderId }
+                    };
+
+                    excelStream.Position = 0;
+
+                    var createRequest = service.Files.Create(fileMetadata, excelStream, mimeType);
                     createRequest.Fields = "id";
                     await createRequest.UploadAsync();
-                }
 
-                return Ok("Excel file successfully saved/updated in Google Drive.");
+                    return Ok("File created successfully in Google Drive.");
+                }
             }
             catch (Exception ex)
             {
-                return BadRequest("Error saving file to Google Drive: " + ex.Message);
+                return BadRequest(new
+                {
+                    Message = "Error saving file to Google Drive",
+                    Error = ex.Message
+                });
             }
         }
 

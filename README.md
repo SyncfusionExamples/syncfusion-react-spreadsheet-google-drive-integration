@@ -1,5 +1,5 @@
 # syncfusion-react-spreadsheet-google-drive-integration
-This repository contains a complete sample demonstrating how to integrate the Syncfusion React Spreadsheet component with an ASP.NET Core Web API connected to Google Drive. It showcases how to open and save Excel files using Google Drive’s API for a secure and seamless cloud-based spreadsheet experience
+This repository contains a complete sample demonstrating how to integrate the [React Spreadsheet](https://www.syncfusion.com/spreadsheet-editor-sdk/react-spreadsheet-editor) component with an ASP.NET Core Web API connected to Google Drive. It showcases how to open and save Excel files using Google Drive’s API for a secure and seamless cloud-based spreadsheet experience
 
 📁 **Project Structure**
 
@@ -10,14 +10,14 @@ This repository contains a complete sample demonstrating how to integrate the Sy
 
 ✨ **Features**
 
-- Open Excel files directly from Google Drive into Syncfusion Spreadsheet.
+- Open Excel files directly from Google Drive into Spreadsheet.
 - Edit spreadsheet data in-browser.
 - Save changes back to Google Drive with a single click.
 - Dropdown list to select files from Google Drive.
 
 🧩 **Technologies Used**
 
-- React + Syncfusion Spreadsheet
+- React + Spreadsheet
 - ASP.NET Core Web API
 - Google Drive API for .NET
 - Google Drive for cloud storage
@@ -76,7 +76,7 @@ This repository contains a complete sample demonstrating how to integrate the Sy
 - **Tested files used in the dropdown can be found here**: [Tested Excel files](./client/public/Files/) 
 
 - You can update this list to match the actual Excel files stored in your Google Drive storage.
-- After selecting a file, click the "Open From Drive" button to load the selected Excel file into the Syncfusion Spreadsheet.
+- After selecting a file, click the "Open From Drive" button to load the selected Excel file into the Spreadsheet.
 - Once you make edits, click the "Save to Drive" button to save the changes back to the same file in your Google Drive storage.
 
 📄 **License and copyright**
